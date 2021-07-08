@@ -1,0 +1,151 @@
+
+#include <SoftwareSerial.h>
+
+SoftwareSerial Seriald(7, 8);//7 tx 8 rx
+
+const int water_read = A0; 
+const int soil_read = A1; 
+int value_water;
+int value_soil;
+
+
+int soil_thr= 100;
+int water_thr = 100; 
+
+ 
+int motor_w = 9;
+int motor_s = 10;
+int call_water =0;
+int call_soil=0;
+int called =0;
+
+String instr="";
+int i=0; 
+
+
+void callphone()
+{
+ Serial.println("setting  up comms");
+ Seriald.println("AT+CMGF=0");
+// delay(5000);
+ Serial.println("dialling...");
+ Seriald.println("ATD +917676405737;");
+ delay(30000);
+ Seriald.println("ATH0");
+ Serial.println("Hung up.");
+ called =1 ;
+}
+
+void setup()
+{
+ Serial.begin(9600);
+ Seriald.begin(9600);
+ pinMode(water_read , INPUT);
+ pinMode(soil_read , INPUT);
+ pinMode(motor_w , OUTPUT);
+ pinMode(motor_s , OUTPUT);
+ delay(1000);
+}
+
+
+void loop()
+{
+value_water = analogRead(water_read); 
+    value_soil = analogRead(soil_read); 
+
+ if ( value_water <= water_thr){
+
+  if(called ==0)
+  {
+    callphone();
+  }
+    call_water = 1;
+
+   // Serial.println("Call_wat:");
+    //Serial.print(call_water);
+    //Serial.println("");
+    
+    }
+
+    else
+    {
+      call_water = 0;
+     digitalWrite(motor_w , LOW);  
+    // Serial.println("Call_wat:");
+    //Serial.println(call_water);
+      //  Serial.println("");
+
+    }
+
+
+  if ( value_soil <= soil_thr){
+    if(called == 0)
+  {
+    callphone();
+  }
+ 
+    call_soil=1;
+    //Serial.println("Call_soil:");
+   // Serial.print(call_soil);
+ }
+
+ else
+ {
+    call_soil =0;
+    digitalWrite(motor_s, LOW);
+   // Serial.println("Call_soil:");
+   // Serial.print(call_soil);
+ }
+
+ 
+while (Serial.available()) 
+  {
+    Seriald.write(Serial.read());//Forward what Serial received to Software Serial Port
+    
+  }
+  
+  while(Seriald.available()) 
+  {     
+    char ch=Seriald.read();
+    Serial.write(ch);//Forward what Software Serial received to Serial Port
+    instr+=ch;
+    i++;
+
+    if(instr[i-4] == 'R' && instr[i-3] == 'I' && instr[i-2] == 'N' && instr[i-1] == 'G' )
+    {
+
+if(call_water==1)
+{
+  digitalWrite(motor_w , HIGH);
+  Serial.println("WATER MOTOR IS RUNNING");
+ 
+}
+
+else
+{
+  digitalWrite(motor_w , LOW);  
+    Serial.println("WATER MOTOR IS NOT RUNNING");
+
+}
+
+if(call_soil==1)
+{
+   digitalWrite(motor_s, HIGH);
+     Serial.println("sOIL MOTOR IS RUNNING");
+
+   
+}
+
+else
+{
+   digitalWrite(motor_s, LOW);
+        Serial.println("SOIL MOTOR IS NOT RUNNING");
+
+
+  
+}
+
+    }
+  }
+
+}
